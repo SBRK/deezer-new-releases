@@ -1,4 +1,12 @@
-import localConfig from './config.local'
+let localConfig = {}
+
+try {
+  localConfig = require('./config.local').default
+} catch(e) {
+}
+
+console.log(localConfig)
+
 
 export default {
   appId: 'YOUR_APP_ID',
