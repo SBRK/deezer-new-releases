@@ -12,6 +12,7 @@ import {JssProvider, SheetsRegistry} from 'react-jss'
 
 import deezer, { deezerRequest, deezerCreateSession } from './deezer'
 import config from './config'
+import { cacheGet, cacheSet } from './cache'
 
 import AlbumList from './components/AlbumList'
 
@@ -91,7 +92,19 @@ app.get('/deezerCallback', async (req, res) => {
   }
 })
 
-const getArtistReleases = (accessToken, id) => deezerRequest(accessToken, `artist/${id}/albums`, { limit: 9999 })
+const getArtistReleases = async (accessToken, id) => {
+  const cacheKey = `artist_${id}_releases`
+  let releases
+
+  releases = await cacheGet(cacheKey)
+
+  if (!releases) {
+    releases = await deezerRequest(accessToken, `artist/${id}/albums`, { limit: 9999 })
+    await cacheSet(cacheKey, releases)
+  }
+
+  return releases
+}
 const getMyArtists = accessToken => deezerRequest(accessToken, 'user/me/artists', { limit: 9999 })
 const getMyArtistsReleases = async (accessToken, days) => {
   const artists = await getMyArtists(accessToken)
