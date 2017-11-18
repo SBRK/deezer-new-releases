@@ -6,8 +6,14 @@ import Promise from 'bluebird'
 import _ from 'lodash'
 import moment from 'moment'
 
+import React from 'react'
+import ReactDOMServer from 'react-dom/server'
+import {JssProvider, SheetsRegistry} from 'react-jss'
+
 import deezer, { deezerRequest, deezerCreateSession } from './deezer'
 import config from './config'
+
+import AlbumList from './components/AlbumList'
 
 const app = express()
 
@@ -32,8 +38,32 @@ app.get('/', async (req, res) => {
   }
 
   try {
-    const releases = await getMyArtistsReleases(req.session.deezerAccessToken)
-    res.json(releases)
+    const sheets = new SheetsRegistry()
+    const releases = await getMyArtistsReleases(req.session.deezerAccessToken, _.get(req, ['query', 'days']))
+    const reactHtml = ReactDOMServer.renderToString(
+      <JssProvider registry={sheets}>
+        <AlbumList albumList={releases}/>
+      </JssProvider>
+    )
+
+    const html = `
+      <html>
+        <head>
+          <style type='text/css' id='server-side-styles'>
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: black;
+            }
+            ${sheets.toString()}
+          </style>
+        </head>
+        <body>
+          ${reactHtml}
+        </body>
+      </html>
+    `
+    res.send(html)
   } catch (error) {
     console.error(error)
     res.send(error.toString())
@@ -63,7 +93,7 @@ app.get('/deezerCallback', async (req, res) => {
 
 const getArtistReleases = (accessToken, id) => deezerRequest(accessToken, `artist/${id}/albums`, { limit: 9999 })
 const getMyArtists = accessToken => deezerRequest(accessToken, 'user/me/artists', { limit: 9999 })
-const getMyArtistsReleases = async accessToken => {
+const getMyArtistsReleases = async (accessToken, days) => {
   const artists = await getMyArtists(accessToken)
 
   console.log(`Found ${artists.length} artists`)
@@ -71,7 +101,7 @@ const getMyArtistsReleases = async accessToken => {
   let releases = await Promise.map(
     artists,
     async (artist, index, length) => {
-      console.log(`Getting releases for ${artist.name} (${index + 1}/${length})`)
+      //console.log(`Getting releases for ${artist.name} (${index + 1}/${length})`)
 
       const releases = await getArtistReleases(accessToken, artist.id)
       _.each(releases, release => {
@@ -90,7 +120,7 @@ const getMyArtistsReleases = async accessToken => {
 
   releases = _.filter(
     releases,
-    (album) => moment(album.release_date).isAfter(moment().subtract(21, 'days'))
+    (album) => moment(album.release_date).isAfter(moment().subtract(days || _.get(config, 'days') || 21, 'days'))
   )
 
   console.log(`Found ${releases.length} after filtering`)

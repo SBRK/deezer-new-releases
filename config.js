@@ -13,6 +13,7 @@ export default {
   session: {
     secret: 'should I switch to spotify?'
   },
-  concurrency: 9, // Above 9 will likely trigger a 'Quota limit exceeded'
+  concurrency: 9, // Above 9 will likely trigger a 'Quota limit exceeded',
+  days: 21, // Show releases from last x days
   ...localConfig
 }
