@@ -5,9 +5,6 @@ try {
 } catch(e) {
 }
 
-console.log(localConfig)
-
-
 export default {
   appId: 'YOUR_APP_ID',
   appSecret: 'YOUR_APP_SECRET',
@@ -16,5 +13,6 @@ export default {
   session: {
     secret: 'should I switch to spotify?'
   },
+  concurrency: 9, // Above 9 will likely trigger a 'Quota limit exceeded'
   ...localConfig
 }

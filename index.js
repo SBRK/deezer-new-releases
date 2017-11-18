@@ -18,14 +18,14 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   cookie: {
-    maxAge: 60 * 60 * 24,
+    maxAge: _.get(config, ['session', 'cookie', 'maxAge']) || (60 * 60 * 24),
   }
 }))
 
 app.get('/', async (req, res) => {
   if (!req.session.deezerAccessToken) {
-    const redirectUrl = `http://${config.host}:${config.port}/deezerCallback`
-    const loginUrl = deezer.getLoginUrl(config.appId, redirectUrl)
+    const redirectUrl = `http://${_.get(config, 'host')}:${_.get(config, 'port')}/deezerCallback`
+    const loginUrl = deezer.getLoginUrl(_.get(config, 'appId'), redirectUrl)
 
     res.redirect(loginUrl)
     return
@@ -41,17 +41,17 @@ app.get('/', async (req, res) => {
 })
 
 app.get('/deezerCallback', async (req, res) => {
-  const code = req.query['code']
+  const code = _.get(req, ['query', 'code'])
 
   if (!code) {
-    const error = req.query['error_reason']
+    const error = _.get(req, ['query', 'error_reason'])
     console.error(error)
-    res.send(error.toString())
+    res.send(error)
     return
   }
 
   try {
-    const accessToken = await deezerCreateSession(config.appId, config.appSecret, code)
+    const accessToken = await deezerCreateSession(_.get(config, 'appId'), _.get(config, 'appSecret'), code)
 
     req.session.deezerAccessToken = accessToken
     res.redirect('/')
@@ -81,7 +81,7 @@ const getMyArtistsReleases = async accessToken => {
 
       return releases
     },
-    { concurrency: 5 },
+    { concurrency: _.get(config, 'concurrency')},
   )
 
   releases = _.flatten(releases)
@@ -109,4 +109,4 @@ const getMyArtistsReleases = async accessToken => {
   return releases
 }
 
-app.listen(config.port)
+app.listen(_.get(config, 'port'))
