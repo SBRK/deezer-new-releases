@@ -22,7 +22,7 @@
     "express": "^4.16.2",
     "express-session": "^1.15.6",
     "lodash": "^4.17.4",
-    "moment": "^2.19.2",
+    "moment": "^2.21.0",
     "node-cache": "^4.1.1",
     "node-deezer": "^0.3.3",
     "react": "^16.1.1",
